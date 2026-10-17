@@ -12,6 +12,23 @@ from PIL import ImageTk
 from predict import ROOT, draw_plates, load_models, read_plates, save_predictions
 
 
+def show_plate_text(parent, plates):
+    # Lay out symbols individually from left to right so mixed Persian/digit text cannot reorder.
+    for child in parent.winfo_children():
+        child.destroy()
+    if not plates:
+        tk.Label(parent, text="No plate found", font=("Segoe UI", 16)).pack()
+        return
+    for plate in plates:
+        row = tk.Frame(parent)
+        row.pack(anchor="center")
+        if not plate["text"]:
+            tk.Label(row, text="(no characters)", font=("Segoe UI", 16)).pack()
+            continue
+        for symbol in plate["text"]:
+            tk.Label(row, text=symbol, font=("Segoe UI", 16)).pack(side="left")
+
+
 def main():
     window = tk.Tk()
     window.title("Persian plate reader")
@@ -29,8 +46,8 @@ def main():
     scrollbar.pack(side="right", fill="y")
     canvas.configure(yscrollcommand=scrollbar.set)
     canvas.pack(fill="both", expand=True)
-    text = tk.StringVar()
-    tk.Label(window, textvariable=text, font=("Segoe UI", 16)).pack(pady=8)
+    text_frame = tk.Frame(window)
+    text_frame.pack(pady=8)
     # The worker sends results through a queue; Tk widgets are updated only on the UI thread.
     events = queue.Queue()
     models = None
@@ -77,7 +94,7 @@ def main():
             canvas.create_image(0, 0, image=canvas.image, anchor="nw")
             canvas.configure(scrollregion=canvas.bbox("all"))
             canvas.yview_moveto(0)
-            text.set("   |   ".join(plate["text"] or "(no characters)" for plate in result) if result else "No plate found")
+            show_plate_text(text_frame, result)
             status.set(f"{len(result)} plate(s). PNG and CSV saved in outputs/demo.")
         window.after(100, show_result)
 
