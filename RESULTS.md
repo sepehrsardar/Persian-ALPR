@@ -1,76 +1,102 @@
-# گزارش نسخهٔ ساده و نتایج بررسی‌شده
+# Verified Results and Evaluation Notes
 
-نسخهٔ قابل ارائه شامل نوت‌بوک اصلی آموزش، نوت‌بوک جداگانهٔ آماده‌سازی، فایل `predict.py`، دموی `demo.py` و چند آزمون کوچک است. کد و خروجی‌های قبلی در `archive/advanced_version` محفوظ‌اند. وزن‌های منتخب آموزش قبلی تغییر نکرده‌اند. انتقال جدید نسخه‌های اضافی داده در بخش بایگانی تکرارها ثبت می‌شود.
+This project includes a training/evaluation notebook, a separate data-preparation notebook, shared inference code, a desktop demo, and small regression tests. The checkpoints are preserved from the previous full training experiment. The simplified implementation was checked separately; it was not retrained for a new full 60-epoch schedule.
 
-## جداسازی آماده‌سازی — ۲۰۲۶/۱۰/۱۶
+## Historical full training experiment
 
-بررسی JPG/XML و شباهت به `prepare_data.ipynb` منتقل شد؛ منطق این دو تابع بدون تغییر حفظ شد. نوت‌بوک اصلی جدول‌های `prepared_data` را می‌خواند و در نبود آن‌ها پیام اجرای آماده‌سازی می‌دهد. ساخت ورودی YOLO و کنترل هش فایل‌های منبع کنار آموزش باقی مانده‌اند.
+Both detectors started from YOLOv8n pretrained on COCO. The plate detector trained for 60 epochs. Character training stopped early after 23 epochs, with the best checkpoint from epoch 11. The selected checkpoint hashes were verified.
 
-جدول‌های بررسی‌شدهٔ قبلی بدون تغییر بایت‌ها از `outputs/audit` به `prepared_data` کپی شدند؛ بررسی سنگین کل دیتاست در این تغییر دوباره اجرا نشد. انتخاب قبلی ۱۳٬۸۵۱ تصویر train، ۲٬۰۵۲ تصویر validation و ۴٬۱۱۳ تصویر test حفظ شد.
+| Metric | Verified result | Scope |
+|---|---:|---|
+| Filtered test images | 4,113 | Full source images |
+| Plate detection mAP50 | 98.36% | Test |
+| Plate detection mAP50-95 | 77.53% | Test |
+| Plate precision at the validation-selected fixed threshold | 94.56% | Full pipeline on test |
+| Plate recall at the same threshold | 95.32% | Full pipeline on test |
+| Exact full-plate text accuracy | 4,160 / 4,848 = 85.81% | Test plates with XML-derived text references |
+| Character error rate (CER) | 6.42% | Full pipeline on eligible test plates |
+| Character detection mAP50 | 87.48% | Test reference plate crops |
+| HOG + SVM character accuracy | 89.43% | 18,945 validation character crops |
+| HOG + SVM macro F1 | 0.7511 | Validation character classification |
 
-آماده‌سازی و ذخیرهٔ CSV روی دیتاست مصنوعی کوچک اجرا شد: تصویر خراب، جفت گمشده، کادر با عرض صفر، هشدار نام/ابعاد XML و تکرار دقیق بین train و test بررسی شدند. انتخاب تکرار با اولویت test، تکرارپذیری آماده‌سازی، حفظ فایل‌های منبع، بارگذاری از نوت‌بوک اصلی و پیام نبود جدول‌ها پاس شدند. گزارش: `outputs/verify_data_split.log`.
+The historical metric table is preserved in [assets/verified_metrics.csv](assets/verified_metrics.csv). Precision/recall in the standalone YOLO detection rows summarize its evaluation curves; full-pipeline precision/recall use the fixed threshold selected on validation. They are different reporting scopes.
 
-تمام سلول‌های نوت‌بوک اصلی در حالت saved با کرنل واقعی Jupyter اجرا شدند و خروجی‌ها در نوت‌بوک ثبت شدند؛ گزارش: `outputs/verify_kernel_data_split.log`. شش آزمون `test_predict.py` نیز پاس شدند. در این تغییر آموزش یا ارزیابی مجدد مجموعهٔ test انجام نشد؛ معیارهای کیفیت زیر همان نتایج تاریخی‌اند.
+The SVM was fitted on 132,114 training character crops. Its `C` was selected using validation, so the validation score is not an independent test result. It receives reference character boxes, making its accuracy unsuitable for direct comparison with exact full-plate recognition accuracy. The fitted SVM and shared feature preprocessing were preserved in the simplified version.
 
-## بایگانی واقعی تکرارها — ۲۰۲۶/۱۰/۱۶
+**No new full training result is claimed for the simplified notebooks.** Short runs establish pipeline health, not model quality. New full training requires `MODE="train"` and saves models separately from the existing checkpoints.
 
-آماده‌سازی با قابلیت انتقال روی کل دیتاست اجرا شد. انتخاب تمام ۲۰٬۰۱۶ تصویر دقیقاً با انتخاب قبلی تطبیق داشت. از ۷۱۴ گروه مشابه/تکراری، ۹۵۰ JPG اضافی و ۹۵۰ XML متناظر به `duplicate_photos/20261016_205444_228805` منتقل شدند. در بایگانی، ۷۱۴ کپی JPG و XML عضو منتخب با نقش original نیز قرار دارند؛ نسخهٔ منتخب در دیتاست باقی مانده است. نام duplicate به معنی عضویت در گروه شباهت است و لزوماً تکرار دقیق پیکسلی نیست.
+## Evaluation definitions and limitations
 
-قبل از حذف منبع، هش تمام کپی‌ها تأیید شد. پس از انتقال هم هش همهٔ مقصدهای manifest، حذف مسیرهای اضافی و هش JPG/XML تمام ۲۰٬۰۱۶ تصویر منتخب کنترل شدند. تعداد تصاویر منتخب train برابر ۱۳٬۸۵۱، validation برابر ۲٬۰۵۲ و test برابر ۴٬۱۱۳ باقی ماند. فایل نامعتبر دارای کادر با عرض صفر فقط گزارش شد و جابه‌جا نشد؛ این مرحله تمام مشکلات برچسب‌گذاری یا وابستگی صحنه را رفع نمی‌کند.
+- The full pipeline detects plates in complete images and passes predicted plate crops to the character detector. Standalone character metrics instead use reference plate crops.
+- Reference text is reconstructed from XML character labels in spatial reading order. It is not an independently transcribed ground-truth text dataset and can be incomplete.
+- Exact text accuracy requires every character of an eligible reference plate to match. Missed eligible plates remain errors rather than being dropped from evaluation.
+- Plates without character annotations are excluded from the text-accuracy denominator and counted separately. Extra detections affect detection precision; they do not directly enter that text-accuracy denominator.
+- CER is total edit distance divided by the total number of reference characters.
+- Blurred images, small plates, rare classes, incomplete labels, and possible vehicle/scene overlap remain limitations. Duplicate/similarity filtering does not prove scene-level independence.
+- **The historical test set has already been consumed.** A code rewrite or another evaluation on that set does not produce a fresh independent test estimate. A new independent holdout is required for final claims about future improvements.
 
-آزمون روی دادهٔ موقت، نگهداری اصل، نام‌گذاری، جابه‌جایی جفت‌ها، نبود تکرار و توقف بدون حذف منبع در صورت تغییر منبع، خطای کپی، خرابی کپی مقصد و مسیر خارج از دیتاست را پوشش داد. نوت‌بوک اصلی پس از انتقال در حالت saved و شش آزمون پیش‌بینی پاس شدند. آموزش و ارزیابی test دوباره انجام نشد.
+![Verified examples from the historical experiment](assets/verified_examples.png)
 
-گزارش‌ها: `outputs/verify_duplicate_archive.log`، `outputs/run_duplicate_preparation.log`، `outputs/verify_real_duplicate_archive.log` و `outputs/verify_saved_duplicate_archive.log`. مسیر قبلی/جدید، هش و وضعیت هر فایل در `duplicate_photos/20261016_205444_228805/manifest.csv` ثبت شده است. بایگانی از Git کنار گذاشته شده است.
+## Verification of the simplified implementation
 
-## بررسی خود بازنویسی
-
-| بررسی | نتیجهٔ واقعی |
+| Check | Observed result |
 |---|---|
-| اجرای تمام سلول‌های پیش‌فرض | در کرنل واقعی Jupyter محیط پروژه پاس شد؛ حالت saved، بدون آموزش و بدون ارزیابی مجدد test |
-| بررسی دوبارهٔ تمام JPG/XMLها | فهرست تصاویر، تمام کادرها و انتخاب نمونه‌های مجاز دقیقاً با بررسی معتبر قبلی برابر بود |
-| کنترل تکرار/شباهت | خروجی روش ساده روی کل داده با نسخهٔ قبلی تطابق داشت؛ تضمین استقلال خودرو/صحنه نیست |
-| آموزش کوتاه YOLO پلاک | یک epoch، ۱۶ تصویر train و چهار تصویر validation؛ lossها عدد محدود و وزن ذخیره شد |
-| آموزش کوتاه YOLO کاراکتر | یک epoch، ۱۹ برش train و شش برش validation؛ lossها عدد محدود و وزن ذخیره شد |
-| ارزیابی و انتخاب مسیر در smoke | validation اجرا شد؛ test اجرا نشد؛ آستانهٔ smoke برای استفادهٔ نهایی نیست |
-| SVM کوچک | آموزش و ارزیابی validation اجرا شد؛ پیش‌بینی تمام نمونه‌های validation پس از ذخیره/بارگذاری یکسان بود |
-| شاخه‌های انتخاب آستانه و ارزیابی نهایی | با وزن‌های موجود و تقسیم مصنوعی ۹ تصویر از validation بررسی شدند؛ مجموعهٔ test اصلی برای این بررسی اجرا نشد و عدد کیفیت جدیدی گزارش نمی‌شود |
-| تطابق پیش‌بینی با نسخهٔ قبل | متن و کادر پلاک در ۳۲ تصویر validation با فاصلهٔ یکنواخت برابر بود |
-| تطابق پیش‌پردازش SVM | تمام ۳۲۴ ویژگی HOG در ۶۴ برش بررسی‌شده دقیقاً برابر بود |
-| آزمون‌های مستقل کوچک | شش آزمون پاس شدند |
-| پنجرهٔ دمو | مسیر انتخاب عکس، پردازش پس‌زمینه، نمایش و ذخیرهٔ PNG/CSV در پنجرهٔ مخفی خودکار پاس شد |
-| سلامت وابستگی‌ها | pip check در محیط پروژه تعارضی گزارش نکرد |
+| Default notebook Run All | Passed in the project's real Jupyter kernel in `saved` mode, without training or reevaluating test |
+| Full JPG/XML rescan | Image records, annotations, and retained-image selection exactly matched the previous verified audit |
+| Duplicate/similarity filtering | The simplified method matched the previous selection over the full dataset; this does not establish vehicle/scene independence |
+| Plate YOLO smoke training | One epoch on 16 training and four validation images; losses were finite and weights were saved |
+| Character YOLO smoke training | One epoch on 19 training and six validation plate crops; losses were finite and weights were saved |
+| Smoke evaluation flow | Validation ran; test did not run; provisional smoke thresholds are not deployment recommendations |
+| Small SVM run | Training and validation completed; all validation predictions matched after save/reload |
+| Threshold-selection and final-evaluation branches | Exercised with existing weights and an artificial split of nine original validation images; the original test set was not used and no new quality score is claimed |
+| Inference consistency | Plate boxes and text matched the previous implementation on 32 evenly spaced validation images |
+| SVM preprocessing consistency | All 324 HOG features matched exactly for each of 64 inspected character crops |
+| Regression tests | Six tests passed |
+| Desktop demo | Automated hidden-window checks passed image selection, background processing, display, and PNG/CSV saving |
+| Dependency consistency | `pip check` reported no conflicts in the project environment |
 
-خروجی‌های بررسی در `outputs/verify_*.log` و اجرای کوتاه در `outputs/smoke_20261015_162653` قرار دارند. ابزارهای یک‌بار مصرف بررسی در `archive/maintenance` هستند؛ نسخهٔ ساده برای کارکردن به آن‌ها نیاز ندارد. جدول‌ها و تصاویر اجرای saved داخل خود نوت‌بوک ذخیره شده‌اند.
+Local verification logs are in `outputs/verify_*.log`; the short training run is in `outputs/smoke_20261015_162653`. One-time maintenance tools are retained locally under `archive/maintenance`. These folders are excluded from the public repository and are not runtime dependencies. Saved-mode output tables and images are embedded in the main notebook; selected public evidence is in `assets`.
 
-## آموزش کامل قبلی — دادهٔ واقعی، بدون ادعای اجرای دوباره
+## Separating data preparation — 2026-10-16
 
-مدل پلاک ۶۰ epoch آموزش دید. آموزش کاراکتر با توقف زودهنگام پس از ۲۳ epoch تمام شد و بهترین وزن از epoch یازدهم بود. این دو مدل از YOLOv8n ازپیش‌آموزش‌دیدهٔ COCO شروع شدند. وزن‌های موجود در `models` همان نسخه‌های بررسی‌شده‌اند و هش آن‌ها کنترل شد.
+JPG/XML validation and similarity grouping were moved to `prepare_data.ipynb` without changing the two functions' logic at that refactoring step. The main notebook reads `prepared_data` tables and reports a clear error if they are missing. YOLO input conversion and source hash checks remain next to training.
 
-| معیار | نتیجه |
+At that step, the previously verified tables were copied byte-for-byte from `outputs/audit` to `prepared_data`; the expensive full audit was not repeated during the initial separation. The retained selection stayed at 13,851 training, 2,052 validation, and 4,113 test images.
+
+The preparation/CSV path was exercised on a small synthetic dataset covering corrupt images, missing pairs, zero-width boxes, stale XML names/dimensions, and exact cross-split duplicates. Test-first retention, repeatability, source preservation at that stage, loading from the main notebook, and the missing-index message passed. Local log: `outputs/verify_data_split.log`.
+
+All main-notebook cells then ran in saved mode through a real Jupyter kernel, with outputs captured in the notebook. Six inference regression tests also passed. Logs include `outputs/verify_kernel_data_split.log`. No training or test reevaluation was performed for that separation.
+
+## Physical duplicate archiving — 2026-10-16
+
+Preparation was subsequently extended to archive surplus image/XML pairs and executed on the complete local dataset. Its retained selection exactly matched all 20,016 previously retained images:
+
+| Split | Retained images |
 |---|---:|
-| تعداد تصاویر تست فیلترشده | ۴٬۱۱۳ |
-| mAP50 تشخیص محل پلاک | ۹۸٫۳۶٪ |
-| mAP50–95 تشخیص محل پلاک | ۷۷٫۵۳٪ |
-| precision محل پلاک در آستانهٔ ثابت منتخب validation | ۹۴٫۵۶٪ |
-| recall محل پلاک در همان آستانه | ۹۵٫۳۲٪ |
-| متن کامل مطابق برچسب XML | ۴٬۱۶۰ از ۴٬۸۴۸؛ ۸۵٫۸۱٪ |
-| نرخ خطای کاراکتر | ۶٫۴۲٪ |
-| mAP50 تشخیص کاراکتر روی برش صحیح پلاک | ۸۷٫۴۸٪ |
-| دقت SVM روی ۱۸٬۹۴۵ کاراکتر validation | ۸۹٫۴۳٪ |
-| macro F1 مدل SVM روی validation | ۰٫۷۵۱۱ |
+| Train | 13,851 |
+| Validation | 2,052 |
+| Test | 4,113 |
 
-فایل `assets/verified_metrics.csv` جدول نتایج قبلی را بدون وابستگی به گزارش‌های JSON نگه می‌دارد. precision/recall ردیف‌های تشخیص YOLO در این CSV خلاصهٔ منحنی معیارند؛ precision/recall مسیر سرتاسری، آستانهٔ ثابت منتخب validation را استفاده می‌کند. این دو نوع گزارش را یکی ندان.
+Across 714 duplicate/similarity groups, 950 surplus JPGs and their 950 XML files were moved to `duplicate_photos/20261016_205444_228805`. The archive also contains copies of the 714 retained JPG/XML pairs, labeled `original`; their source files remain in the dataset. Group membership can reflect approximate similarity rather than identical pixels.
 
-SVM بر روی ۱۳۲٬۱۱۴ کاراکتر آموزشی ساخته شده و C آن با validation انتخاب شده است؛ امتیاز validation یک تست مستقل نیست. SVM کادر صحیح کاراکتر را دریافت می‌کند؛ معیار آن با دقت خواندن کامل پلاک قابل مقایسهٔ مستقیم نیست. فایل مدل SVM و پیش‌پردازش آن در نسخهٔ ساده حفظ شده‌اند.
+Every backup hash was verified before deleting a surplus source. After transfer, verification checked every manifest destination hash, removal of surplus source paths, and the JPG/XML hashes of all 20,016 retained images. The invalid pair with a zero-width box was reported and left in place; this step does not resolve every annotation or scene-dependence problem.
 
-**نسخهٔ ساده دوباره با آموزش کامل اجرا نشده است.** اجرای کوتاه، درستی مسیر را بررسی می‌کند و امتیاز کیفیت مدل محسوب نمی‌شود. آموزش کامل جدید تنها با انتخاب `MODE="train"` آغاز می‌شود و مدل‌های قبلی را جایگزین نمی‌کند.
+Temporary-data checks covered retained originals, naming, paired transfers, no-duplicate behavior, and stopping without source deletion on a modified source, copy error, corrupt backup, or source path outside the dataset. The main notebook passed in saved mode after transfer, and the six inference tests passed. No training or test reevaluation was performed.
 
-## محدودیت‌ها و اصلاح زاویه
+Local records:
 
-متن مرجع از XML بازسازی می‌شود و برای برخی پلاک‌ها ناقص است. پلاک گم‌شده در امتیاز متن خطا محسوب می‌شود؛ پلاک فاقد برچسب کاراکتر از مخرج دقت متن کنار گذاشته و جدا شمارش می‌شود. تاری، پلاک کوچک، کلاس کم‌نمونه و شباهت خودرو/صحنه محدودیت‌های واقعی‌اند. محتوای فایل‌های منتخب تغییر نکرده است؛ نسخه‌های اضافی طبق manifest در بایگانی نگهداری می‌شوند.
+- `outputs/verify_duplicate_archive.log`
+- `outputs/run_duplicate_preparation.log`
+- `outputs/verify_real_duplicate_archive.log`
+- `outputs/verify_saved_duplicate_archive.log`
+- `duplicate_photos/20261016_205444_228805/manifest.csv`
 
-تست آزمایش قبلی مصرف شده است؛ برای ادعای بهبود نسخهٔ جدید، مجموعهٔ مستقل تازه لازم است. بازنویسی این امتیاز را به تست مستقل تازه تبدیل نمی‌کند.
+The manifest records old/new paths, hashes, and transfer status. The archive and local logs are excluded from Git.
 
-اصلاح پرسپکتیو اختیاری و پیش‌فرض خاموش است. نسخهٔ آزمایشی قبلی روی کل validation دقت متن را از ۸۵٫۳۶٪ به ۸۴٫۸۲٪ رساند؛ بنابراین بهبود کلی محسوب نشد. در عکس کج `day_00200.jpg` که کاربر برای بررسی خطا فرستاد، نسخهٔ ساده نیز متن معمولی `64ط753558` را با حالت آزمایشی به `64ب75355` تغییر داد. این فقط بررسی موردی همان عکس است و اثبات بهبود کلی یا ارزیابی دوبارهٔ مجموعهٔ test نیست.
+## Perspective correction
 
-![نمونه‌های واقعی آزمایش قبلی](assets/verified_examples.png)
+Perspective correction is optional and off by default. A previous experimental method reduced exact text accuracy on the complete validation set from 85.36% to 84.82%; it was not adopted as a general improvement.
+
+For the tilted diagnostic image `day_00200.jpg`, the simplified implementation changed the ordinary prediction `64ط753558` to `64ب75355` with correction enabled. This was a targeted inspection of a user-selected, already-known test image, not evidence of overall improvement or a new test-set benchmark.
+
+Retained source file contents and trained checkpoint contents were preserved. Surplus source copies are recoverable through the duplicate archive manifest described above.

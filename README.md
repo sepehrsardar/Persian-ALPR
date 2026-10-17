@@ -1,71 +1,115 @@
-# خواندن پلاک فارسی — نسخهٔ ساده
+# Persian ALPR
 
-دو مدل YOLOv8n: پیدا کردن پلاک و سپس تشخیص کاراکترهای داخل آن. در انتهای نوت‌بوک، HOG + SVM هم بررسی می‌شود.
+Persian license plate detection and recognition using two YOLOv8n models: one locates plates in a full image, and the other detects and classifies characters inside each plate crop. A HOG + SVM character-classification baseline is included in the training notebook.
 
-## شروع
+![Plate preview with character boxes and predictions](assets/demo_preview.png)
 
-روی سیستم تازه، ابتدا وابستگی‌ها را طبق بخش «نصب روی سیستم تازه» نصب کن و کرنل **`.venv-gpu/Scripts/python.exe`** را انتخاب کن.
+## Verified results
 
-برای اجرای دمو، [بستهٔ مدل‌های آموزش‌دیده](https://github.com/sepehrsardar/Persian-ALPR/releases/download/v1.0.0/Persian-ALPR-models.zip) را دریافت و در ریشهٔ پروژه استخراج کن؛ فایل‌ها داخل `models` قرار می‌گیرند. سپس `python demo.py` را با محیط نصب‌شده اجرا کن. دیتاست برای دمو لازم نیست.
+| Metric | Result | Evaluation scope |
+|---|---:|---|
+| Plate detection mAP50 | 98.36% | Test images |
+| Plate detection mAP50-95 | 77.53% | Test images |
+| Exact full-plate text accuracy | 85.81% | Test plates with reconstructed XML text references |
+| Character error rate (CER) | 6.42% | Full pipeline on eligible test plates |
+| HOG + SVM character accuracy | 89.43% | Validation reference character crops |
+| HOG + SVM macro F1 | 0.7511 | Validation reference character crops |
 
-۱. برای دیتاست تازه، ابتدا **`prepare_data.ipynb`** را با **Run All** اجرا کن. این مرحله سلامت تصویر و XML، کادرها و تکرار/شباهت را بررسی و جدول‌های `prepared_data` را می‌سازد. از هر گروه یک جفت تصویر/XML در دیتاست می‌ماند؛ نسخه‌های اضافی بعد از کپی و تأیید هش به `duplicate_photos` منتقل می‌شوند. این بررسی ممکن است زمان‌بر باشد و با تغییر دیتاست باید تکرار شود.
+These are preserved results from the previous full training experiment, not a new full training run of the simplified notebooks. SVM character classification and full-plate recognition are different tasks. See [RESULTS.md](RESULTS.md) for definitions, verification, and limitations.
 
-۲. سپس **`Iranian_ALPR.ipynb`** را با **Run All** اجرا کن. این نوت‌بوک دادهٔ آماده را می‌خواند و پاک‌سازی سنگین را تکرار نمی‌کند. اگر جدول‌ها موجود نباشند، پیام اجرای آماده‌سازی می‌دهد. هنگام ساخت ورودی آموزش، تغییر محتوای فایل‌های ثبت‌شده با هش کنترل می‌شود؛ برای فایل‌های اضافه یا حذف‌شده هم آماده‌سازی را دوباره اجرا کن.
+## Install dependencies
 
-جدول‌های `prepared_data` در مخزن منتشر نشده‌اند و برای آموزش یا اجرای کامل نوت‌بوک باید با آماده‌سازی ساخته شوند. برای اجرای صرفاً دمو، هیچ‌یک از دو نوت‌بوک و دیتاست لازم نیست؛ فقط فایل‌های مدل و وابستگی‌ها لازم‌اند.
+The verified environment uses Python 3.10. From the project root, create an environment and install dependencies. The following PowerShell commands use the CUDA build tested on the original NVIDIA GPU environment:
 
-در اولین سلول کد، یک حالت انتخاب می‌شود:
-
-| `MODE` | عملکرد |
-|---|---|
-| `"saved"` | پیش‌فرض: بارگذاری مدل‌ها، نمایش نتایج واقعی قبلی و پیش‌بینی روی عکس جدید؛ آموزش ندارد. |
-| `"smoke"` | بررسی مسیر آموزش با ۱۶ تصویر train، چهار تصویر validation و یک epoch برای هر YOLO؛ SVM کوچک هم آموزش می‌بیند. test اجرا نمی‌شود. |
-| `"train"` | خواندن دادهٔ آماده، ساخت ورودی YOLO، آموزش، انتخاب تنظیمات با validation، ارزیابی و سپس آموزش و ارزیابی SVM. |
-
-آموزش اصلی قبلی روی RTX 4070 Laptop حدود ۱٫۵ ساعت طول کشید؛ زمان نسخهٔ جدید ممکن است متفاوت باشد. این بازنویسی دوباره ۶۰ epoch آموزش ندیده است. ابتدا smoke را اجرا کن.
-
-`NEW_IMAGE` مسیر عکس دلخواه است. `RECTIFY_NEW_IMAGE` اصلاح آزمایشی پرسپکتیو را روشن می‌کند؛ پیش‌فرض خاموش است، چون روش قبلی روی کل validation افت داشت.
-
-## فایل‌های اصلی
-
-```text
-prepare_data.ipynb   بررسی سلامت و تکرار داده؛ یک بار برای هر نسخهٔ دیتاست
-Iranian_ALPR.ipynb   خواندن دادهٔ آماده، آموزش، ارزیابی و SVM
-predict.py           بارگذاری مدل، خواندن پلاک و رسم نتیجه
-demo.py              پنجرهٔ انتخاب عکس
-test_predict.py      چند بررسی کوچک برای درستی کد
-models/             وزن‌ها و settings.csv
-assets/             نتایج واقعی قبلی و تصاویر منتخب
-outputs/            خروجی‌های جدید؛ خودکار ساخته می‌شود
-prepared_data/      جدول‌های حاصل از آماده‌سازی؛ خودکار ساخته می‌شود
-duplicate_photos/   بایگانی قابل بازبینی تصاویر مشابه و تکراری، XML و manifest.csv
-new_dataset/        تصاویر و XML اصلی خودت
-archive/            نسخهٔ قدیمی؛ نسخهٔ جدید به آن وابسته نیست
+```powershell
+py -3.10 -m venv .venv-gpu
+.\.venv-gpu\Scripts\python.exe -m pip install torch==2.11.0 torchvision==0.26.0 --index-url https://download.pytorch.org/whl/cu128
+.\.venv-gpu\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv-gpu\Scripts\python.exe -m pip check
 ```
 
-تنظیمات داخل نوت‌بوک و جدول‌ها CSV هستند؛ فایل JSON جداگانه برای اجرای این نسخه لازم نیست. فایل YAML مورد نیاز YOLO خودکار ساخته می‌شود. نوت‌بوک، `predict.py` و `demo.py` کد قبلی `alpr/` یا `tools/` را فراخوانی نمی‌کنند.
+For CPU use, install a compatible CPU build of torch and torchvision instead of the CUDA pair above. The code selects CPU when CUDA is unavailable. Select `.venv-gpu/Scripts/python.exe` as the notebook kernel in VS Code or Jupyter; `ipykernel` is included in the requirements.
 
-## دمو
+## Run the demo
 
-از پوشهٔ پروژه در PowerShell:
+1. Download [Persian-ALPR-models.zip](https://github.com/sepehrsardar/Persian-ALPR/releases/download/v1.0.0/Persian-ALPR-models.zip).
+2. Extract it into the project root. It contains the `models` folder with both trained YOLO checkpoints, the SVM model, and `settings.csv`.
+3. Run:
 
 ```powershell
 .\.venv-gpu\Scripts\python.exe demo.py
 ```
 
-هر پلاک کامل با کادر کاراکترها و پیش‌بینی زیر همان کادر نمایش داده می‌شود. PNG و CSV در `outputs/demo` ذخیره می‌شوند. گزینهٔ اصلاح پرسپکتیو آزمایشی است؛ قاب‌گیری اشتباه می‌تواند نتیجه را بدتر کند. امتیاز مدل، درصد دقت قطعی آن عکس نیست.
+The demo displays each complete plate crop, draws character boxes, and places each predicted symbol below its box. A PNG preview and CSV predictions are saved to `outputs/demo`.
 
-![نمای دموی نسخهٔ ساده](assets/demo_preview.png)
+The demo requires the model files and installed dependencies; it does not require the dataset or either notebook. A detection confidence score is not a guaranteed percentage of text correctness.
 
-## داده و ارزیابی
+Perspective correction is experimental and off by default because the previous method reduced overall validation accuracy. Incorrect border selection can make a prediction worse.
 
-داده در `new_dataset/train`، `new_dataset/validation` و `new_dataset/test` است؛ هر JPG یک XML متناظر دارد. برچسب `کل ناحیه پلاک` محل پلاک را مشخص می‌کند و ۳۱ کلاس دیگر برای کاراکترها هستند.
+## Project files
 
-`prepare_data.ipynb` ابعاد واقعی JPG، کادر نامعتبر، فایل خراب، جفت گمشده و تکرار/شباهت را بررسی می‌کند. `images.csv` اطلاعات تصاویر و ستون انتخاب `keep`، `boxes.csv` کادرها و `issues.csv` خطاها و هشدارها را در `prepared_data` نگه می‌دارند. نوت‌بوک اصلی فقط تصاویر با `keep=1` را انتخاب می‌کند. ساخت برش‌ها و ورودی YOLO کنار آموزش در نوت‌بوک اصلی است؛ برش‌ها بخش تصویر اصلی را حفظ می‌کنند. شباهت‌سنجی، استقلال خودرو/صحنه را تضمین نمی‌کند.
+```text
+prepare_data.ipynb   Validate annotations and archive duplicate/similar images
+Iranian_ALPR.ipynb   Load prepared data, train, evaluate, predict, and compare SVM
+predict.py          Shared model loading, inference, and visualization
+demo.py             Desktop image-selection demo
+test_predict.py     Small inference regression tests
+requirements.txt    Python dependencies; install torch/torchvision separately
+README.md           Setup and execution guide
+RESULTS.md          Verified results, checks, and limitations
+models/             settings.csv; trained weights downloaded from the release
+assets/             Verified metric tables, reports, and example images
+```
 
-### بازبینی تکرارها
+Local/generated folders are excluded from Git:
 
-برای هر اجرا و گروه، زیرپوشه‌ای در `duplicate_photos` ساخته می‌شود. نمونهٔ نام‌ها:
+```text
+new_dataset/        Source images and XML annotations
+prepared_data/      CSV indexes produced by data preparation
+duplicate_photos/   Review archive, paired XML files, and transfer manifests
+outputs/            Run-specific datasets, checkpoints, and reports
+archive/            Local historical code and maintenance tools
+```
+
+The active code does not depend on the historical `alpr/` or `tools/` packages. Notebook settings are defined in code cells; output tables use CSV. YOLO dataset YAML files are generated automatically. No separate JSON configuration file is required.
+
+## Prepare data and use the notebook
+
+Training requires a local annotated dataset; a public dataset download link is not currently provided. Place image/XML pairs in:
+
+```text
+new_dataset/
+    train/
+    validation/
+    test/
+```
+
+Each JPG has a corresponding XML file. The plate class is named `کل ناحیه پلاک` in the source annotations, and there are 31 character classes.
+
+1. Run **`prepare_data.ipynb`** with **Run All** for a new or modified dataset. It checks decoded image dimensions, corrupt files, missing pairs, invalid boxes, and exact/approximate duplicates.
+2. Run **`Iranian_ALPR.ipynb`** with **Run All**. It reads the prepared indexes without repeating the expensive similarity scan. Missing indexes produce an instruction to run preparation first.
+
+Preparation writes `images.csv` (image metadata and the `keep` selection), `boxes.csv` (annotations), and `issues.csv` (errors and warnings) to `prepared_data`. Only `keep=1` images enter the main pipeline. Source hashes are checked when generating training inputs. Rerun preparation after adding, deleting, or changing source files.
+
+Choose `MODE` in the first code cell:
+
+| Mode | Behavior |
+|---|---|
+| `"saved"` | Default: load trained models, display historical results, and predict a new image; no training. Full notebook execution still requires the dataset and prepared indexes. |
+| `"smoke"` | Use up to 16 training and four validation images, train each YOLO model for one epoch, and fit a small SVM baseline. Test is not evaluated. |
+| `"train"` | Build YOLO inputs, train models, select thresholds on validation, evaluate, and fit/evaluate the SVM baseline. |
+
+The previous full experiment took approximately 1.5 hours of model training on an RTX 4070 Laptop GPU. New runs can take a different amount of time. The simplified version has not been retrained for a full 60-epoch schedule; run `smoke` before starting long training. Each run saves new models in its own output directory without replacing existing checkpoints.
+
+Set `NEW_IMAGE` to the image path to test. `RECTIFY_NEW_IMAGE` controls the optional perspective correction and defaults to `False`.
+
+For training, also place the official COCO initialization checkpoint at `models/yolov8n.pt`; see the [official Ultralytics asset release](https://github.com/ultralytics/assets/releases/tag/v8.3.0). This initialization checkpoint is different from this project's trained plate and character detectors.
+
+## Review duplicate and similar images
+
+Preparation **modifies the source dataset** by archiving surplus image/XML pairs after verified copies have been made. It retains one member per similarity group, preferring test, then validation, then train. This is a similarity-based safeguard, not a guarantee of independent vehicles or scenes.
+
+Each run gets a separate folder. Example naming:
 
 ```text
 duplicate_photos/<run>/group_000123/
@@ -77,48 +121,26 @@ duplicate_photos/<run>/group_000123/
     day_00456_duplicate2_validation.xml
 ```
 
-این فقط مثال نام‌گذاری است. `original` عضو منتخب گروه با اولویت test، سپس validation و بعد train است؛ لزوماً عکس اولیهٔ دوربین نیست. یک کپی از عضو منتخب در بایگانی می‌ماند و فایل آن در دیتاست حفظ می‌شود. سایر اعضا همراه XML کپی می‌شوند؛ قبل از هر حذف از مسیر قبلی، هش منبع و کپی بررسی می‌شود. گروه‌ها شامل شباهت تقریبی هم هستند؛ تصاویر داخل یک گروه لزوماً پیکسل یکسان ندارند.
+These names are illustrative. `original` means the retained group member, not necessarily the first camera image or the best-quality image. Its source files stay in the dataset and are also copied into the archive. Other group members, including approximately similar images, are copied with their XML files. Source and destination hashes are verified before each surplus source file is removed.
 
-`manifest.csv` در پوشهٔ هر اجرا، مسیر قبلی و جدید، نقش، بخش دیتاست، هش و وضعیت هر JPG/XML را ثبت می‌کند. `copied` یعنی کپی تأیید شده و `moved` یعنی فایل اضافی از مسیر قبلی حذف شده است. در صورت توقف میان اجرا، قبل از تکرار، manifest و وجود فایل‌های دو طرف را بررسی کن؛ حذف‌های انجام‌شده خودکار برگردانده نمی‌شوند و کپی‌ها حفظ می‌شوند. برای بازیابی، فایل مقصد را به مسیر `source` ثبت‌شده برگردان و آماده‌سازی را تکرار کن.
+The run's `manifest.csv` records old/new paths, role, split, hash, and status for each file. `copied` indicates a verified copy; `moved` indicates a surplus source file has been removed. If interrupted, inspect the manifest and both locations before rerunning. Completed removals are not automatically rolled back; the backups remain. To restore files, copy archived destinations back to their recorded source paths and rerun preparation.
 
-جدول اولین آماده‌سازی، ردیف‌های کنارگذاشته‌شده را با `keep=0` حفظ می‌کند؛ مسیر قدیمی این ردیف‌ها بعد از انتقال وجود ندارد. اجرای بعدی پوشهٔ پاک‌شده را دوباره اسکن می‌کند؛ بایگانی قبلی دست‌نخورده می‌ماند. تصاویر یا کادرهای نامعتبر فقط گزارش می‌شوند و به بایگانی تکرارها منتقل نمی‌شوند؛ بنابراین «حذف تکرار» به معنی بی‌نقص بودن کل دیتاست نیست.
+The first prepared index retains excluded rows with `keep=0`; their old source paths no longer exist after transfer. Subsequent runs rescan the cleaned source folders and leave previous archives intact. Invalid image/annotation pairs are reported, not moved into the duplicate archive. Duplicate removal does not fix all annotation or data-quality problems.
 
-مدل کاراکتر با برش صحیح پلاک در آموزش کار می‌کند؛ در پیش‌بینی، برش مدل اول را می‌گیرد. SVM تصویر کاراکترِ با کادر معلوم را می‌گیرد؛ دقت آن با دقت خواندن کامل پلاک قابل مقایسهٔ مستقیم نیست.
+## Evaluation boundaries
 
-**test قبلاً مصرف شده است.** انتخاب تنظیمات نسخهٔ جدید فقط با validation انجام می‌شود. ارزیابی دوبارهٔ همین test در حالت train، برآورد مستقل جدید نیست؛ برای ادعای بهبود نهایی، دادهٔ مستقل تازه لازم است. متن مرجع از XML بازسازی می‌شود و ممکن است ناقص باشد.
+- Character training and standalone character detection evaluation use reference plate crops. Full inference uses crops predicted by the plate detector.
+- Crops inherit their source image's split. Plates without character labels are not treated as negative character samples.
+- Text references are reconstructed from XML and may be incomplete. Missed eligible plates count as text errors; plates without character references are counted separately.
+- SVM receives reference character crops and does not locate plates or characters. Its validation score was used to select `C` and is not an independent test estimate.
+- **The test set has already been consumed.** Settings are selected using validation, but evaluating the same test again is not a fresh independent estimate. New final improvement claims require a new independent holdout.
 
-## نتیجهٔ واقعی قبلی
+![Verified success and failure examples](assets/verified_examples.png)
 
-| معیار | مقدار |
-|---|---:|
-| mAP50 تشخیص پلاک روی test | ۹۸٫۳۶٪ |
-| mAP50–95 تشخیص پلاک روی test | ۷۷٫۵۳٪ |
-| خواندن کامل متن بازسازی‌شدهٔ XML روی test | ۸۵٫۸۱٪ |
-| نرخ خطای کاراکتر روی test | ۶٫۴۲٪ |
-| دقت SVM روی کاراکترهای validation | ۸۹٫۴۳٪ |
-| macro F1 مدل SVM روی validation | ۰٫۷۵۱۱ |
-
-این اعداد در `assets/verified_metrics.csv` از آزمایش کامل قبلی محفوظ‌اند؛ نتیجهٔ آموزش دوبارهٔ این بازنویسی نیستند. بررسی‌های نسخهٔ ساده در [RESULTS.md](RESULTS.md) ثبت شده‌اند.
-
-![نمونه‌های واقعی موفق و ناموفق](assets/verified_examples.png)
-
-## نصب روی سیستم تازه
-
-نسخهٔ بررسی‌شده Python 3.10 است. برای GPU NVIDIA با محیط سازگار CUDA:
-
-```powershell
-py -3.10 -m venv .venv-gpu
-.\.venv-gpu\Scripts\python.exe -m pip install torch==2.11.0 torchvision==0.26.0 --index-url https://download.pytorch.org/whl/cu128
-.\.venv-gpu\Scripts\python.exe -m pip install -r requirements.txt
-.\.venv-gpu\Scripts\python.exe -m pip check
-```
-
-در VS Code/Jupyter کرنل `.venv-gpu/Scripts/python.exe` را انتخاب کن. ipykernel در requirements آمده است. برای CPU، جفت سازگار torch/torchvision CPU را نصب کن؛ نوت‌بوک در نبود CUDA، CPU را انتخاب می‌کند.
-
-برای مدل‌های ذخیره‌شده، فایل‌های `plate_detector.pt`، `character_detector.pt`، `character_svm.joblib` و `settings.csv` باید در `models` باشند. برای آموزش، وزن اولیهٔ رسمی COCO یعنی `models/yolov8n.pt` هم لازم است؛ منبع آن [انتشار رسمی Ultralytics](https://github.com/ultralytics/assets/releases/tag/v8.3.0) است. وزن اولیه با مدل‌های آموزش‌دیدهٔ این پروژه متفاوت است.
+## Run tests
 
 ```powershell
 .\.venv-gpu\Scripts\python.exe -m unittest test_predict -v
 ```
 
-مخزن شامل کد، هر دو نوت‌بوک، راهنماها، requirements، فایل CSV تنظیمات مدل و assets است. دیتاست، بایگانی `duplicate_photos`، جدول‌های تولیدشدهٔ `prepared_data`، محیط مجازی، archive، outputs و وزن‌ها در `.gitignore` کنار گذاشته شده‌اند. وزن‌های آموزش‌دیده از [Release نسخهٔ ۱](https://github.com/sepehrsardar/Persian-ALPR/releases/tag/v1.0.0) قابل دریافت‌اند. لینک عمومی دریافت دیتاست فعلاً ارائه نشده است؛ آموزش به دیتاست محلی با ساختار توضیح‌داده‌شده نیاز دارد.
+The repository includes code, both notebooks, documentation, small CSV settings, and example assets. The dataset, generated indexes, duplicate archive, environments, run outputs, and weights are excluded by `.gitignore`. Trained weights are distributed through [release v1.0.0](https://github.com/sepehrsardar/Persian-ALPR/releases/tag/v1.0.0).
