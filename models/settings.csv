@@ -1,0 +1,3 @@
+﻿model,filename,confidence,image_size,sha256
+plate,plate_detector.pt,0.5,640,8efe9eed2d3c0304c4320a5d1e16ba0d7a82fdf1173821967e31dbbdaf22709b
+character,character_detector.pt,0.21021021021021022,320,b380a44361a5eb6f6bf239bcb8d49c311db9499d3b6d9b03254bad52d6ca38a1
