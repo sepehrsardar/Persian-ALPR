@@ -1,0 +1,16 @@
+.venv*/
+.runtime/
+__pycache__/
+.ipynb_checkpoints/
+archive/
+outputs/
+prepared_data/
+duplicate_photos/
+new_dataset/
+Ultralytics/
+weights/
+runs/
+*.pt
+*.joblib
+*.cache
+new_image.jpg

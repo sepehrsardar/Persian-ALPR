@@ -1,0 +1,12 @@
+# Install a compatible torch/torchvision CPU or CUDA pair first; see README.
+ultralytics==8.4.174
+opencv-python==4.10.0.84
+numpy==1.23.5
+Pillow==11.1.0
+PyYAML==6.0.3
+matplotlib==3.10.0
+scikit-learn==1.6.1
+joblib==1.5.3
+threadpoolctl==3.7.0
+pandas==2.3.3
+ipykernel==7.3.0
