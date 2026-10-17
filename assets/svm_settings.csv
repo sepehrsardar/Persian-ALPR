@@ -1,0 +1,2 @@
+﻿C,train_crops,validation_crops,seed,model_sha256,scope
+1.0,132114,18945,42,ac64c6ac4b388cc8e2ab480b783e4ec20a5a69f947e41ddb66b941e5d20278e9,classification of ground-truth character crops; NOT end-to-end ALPR

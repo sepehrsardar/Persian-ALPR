@@ -1,0 +1,5 @@
+﻿model,scope,precision,recall,mAP50,mAP50_95,accuracy,CER,images,text_eligible_plates,macro_F1,character_crops
+YOLO plate,test: plate detection,0.9571552273450576,0.9535675425048924,0.983589533221357,0.7752926465422783,,,,,,
+YOLO characters,test: character detection on GT plate crops,0.9034581796852059,0.8723658138369463,0.8747754898956548,0.5282490557424657,,,,,,
+YOLO full pipeline,test: reconstructed XML text; missed plates count as errors,0.94564332247557,0.9532115739790683,,,0.858085808580858,0.06420899704249468,4113,4848,,
+HOG + SVM,validation: classification of GT character crops; used to select C,,,,,0.8943256795988388,,,,0.7510981613228995,18945

@@ -1,0 +1,2 @@
+torch,torchvision,ultralytics,numpy,opencv-python,scikit-learn,pandas,ipykernel,python,cuda,scope
+2.11.0+cu128,0.26.0+cu128,8.4.174,1.23.5,4.10.0.84,1.6.1,2.3.3,7.3.0,3.10.0,12.8,simplified version verification; not a historical training environment
