@@ -69,6 +69,7 @@ def main():
             messagebox.showerror("Prediction failed", result)
             status.set("Prediction failed")
         else:
+            # The shared renderer draws compact preview boxes without changing model detections.
             picture = draw_plates(result)
             # Keep a Python reference so Tk does not discard the displayed image.
             canvas.image = ImageTk.PhotoImage(picture)

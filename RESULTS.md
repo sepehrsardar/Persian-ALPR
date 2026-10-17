@@ -100,3 +100,9 @@ Perspective correction is optional and off by default. A previous experimental m
 For the tilted diagnostic image `day_00200.jpg`, the simplified implementation changed the ordinary prediction `64ط753558` to `64ب75355` with correction enabled. This was a targeted inspection of a user-selected, already-known test image, not evidence of overall improvement or a new test-set benchmark.
 
 Retained source file contents and trained checkpoint contents were preserved. Surplus source copies are recoverable through the duplicate archive manifest described above.
+
+## Compact character-box preview — 2026-10-17
+
+The shared renderer used by the desktop demo and notebook now insets each character rectangle by 8% per edge, reducing its displayed width and height by 16%. Leader lines start from the adjusted lower edge. This is a display-only change: original model coordinates, text, confidence scores, and evaluation calculations are unchanged. It does not improve or remeasure recognition accuracy. The README preview was regenerated with the existing checkpoints.
+
+All 18 published files were compared with the publication snapshot before this update. The six inference regression tests passed against the publication code. The demo's image-selection, worker, rendering, and PNG/CSV-save flow passed an automated hidden-window check. All main-notebook code cells passed in saved mode through a real Jupyter kernel, refreshing the embedded output preview without training or reevaluating test. Local records: `outputs/verify_demo_compact_boxes.log` and `outputs/verify_public_compact_boxes.log` (not included in Git).

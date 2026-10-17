@@ -42,6 +42,8 @@ For CPU use, install a compatible CPU build of torch and torchvision instead of 
 
 The demo displays each complete plate crop, draws character boxes, and places each predicted symbol below its box. A PNG preview and CSV predictions are saved to `outputs/demo`.
 
+Preview rectangles are inset by 8% on each edge (16% smaller in width and height) for a less crowded display. This affects drawing only; model boxes, recognized text, confidence scores, and evaluation results are unchanged.
+
 The demo requires the model files and installed dependencies; it does not require the dataset or either notebook. A detection confidence score is not a guaranteed percentage of text correctness.
 
 Perspective correction is experimental and off by default because the previous method reduced overall validation accuracy. Incorrect border selection can make a prediction worse.

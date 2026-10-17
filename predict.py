@@ -215,6 +215,9 @@ def draw_plates(plates):
         draw.text((24, 8), f"Plate #{index} - score {plate['confidence']:.2f}", fill="black", font=ImageFont.load_default(size=18))
         for char in characters:
             x1, y1, x2, y2 = char["box_in_crop"]
+            # Inset display boxes by 8% per edge; model coordinates and recognized text stay unchanged.
+            inset_x, inset_y = (x2-x1) * 0.08, (y2-y1) * 0.08
+            x1, y1, x2, y2 = x1+inset_x, y1+inset_y, x2-inset_x, y2-inset_y
             draw.rectangle((24+x1*scale, 36+y1*scale, 24+x2*scale, 36+y2*scale), outline="#00a66c", width=3)
             center = 24 + (x1+x2) * scale / 2
             draw.line((center, 36+y2*scale, center, crop.height+44), fill="#00a66c")
