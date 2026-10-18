@@ -4,6 +4,10 @@ Persian license plate detection and recognition using two YOLOv8n models: one lo
 
 ![Plate preview with character boxes and predictions](assets/demo_preview.png)
 
+## Project background
+
+This is a personal learning project. I wrote the initial classical machine learning notebook, using ChatGPT to help debug parts of it. The expanded YOLO-based implementation was developed with substantial coding assistance from Codex. I am currently studying the implementation to deepen my understanding of the full pipeline.
+
 ## Verified results
 
 | Metric | Result | Evaluation scope |
@@ -41,8 +45,6 @@ For CPU use, install a compatible CPU build of torch and torchvision instead of 
 ```
 
 The demo displays each complete plate crop, draws character boxes, and places each predicted symbol below its box. A PNG preview and CSV predictions are saved to `outputs/demo`.
-
-Preview rectangles are inset by 8% on each edge (16% smaller in width and height) for a less crowded display. This affects drawing only; model boxes, recognized text, confidence scores, and evaluation results are unchanged.
 
 The demo requires the model files and installed dependencies; it does not require the dataset or either notebook. A detection confidence score is not a guaranteed percentage of text correctness.
 
@@ -109,25 +111,9 @@ For training, also place the official COCO initialization checkpoint at `models/
 
 ## Review duplicate and similar images
 
-Preparation **modifies the source dataset** by archiving surplus image/XML pairs after verified copies have been made. It retains one member per similarity group, preferring test, then validation, then train. This is a similarity-based safeguard, not a guarantee of independent vehicles or scenes.
+**Preparation modifies the source dataset:** surplus image/XML pairs are removed from their source locations only after backup copies and hashes are verified. One member per similarity group is retained, preferring test, then validation, then train. Similarity filtering does not establish vehicle/scene independence.
 
-Each run gets a separate folder. Example naming:
-
-```text
-duplicate_photos/<run>/group_000123/
-    day_00123_original_test.jpg
-    day_00123_original_test.xml
-    day_00987_duplicate1_train.jpg
-    day_00987_duplicate1_train.xml
-    day_00456_duplicate2_validation.jpg
-    day_00456_duplicate2_validation.xml
-```
-
-These names are illustrative. `original` means the retained group member, not necessarily the first camera image or the best-quality image. Its source files stay in the dataset and are also copied into the archive. Other group members, including approximately similar images, are copied with their XML files. Source and destination hashes are verified before each surplus source file is removed.
-
-The run's `manifest.csv` records old/new paths, role, split, hash, and status for each file. `copied` indicates a verified copy; `moved` indicates a surplus source file has been removed. If interrupted, inspect the manifest and both locations before rerunning. Completed removals are not automatically rolled back; the backups remain. To restore files, copy archived destinations back to their recorded source paths and rerun preparation.
-
-The first prepared index retains excluded rows with `keep=0`; their old source paths no longer exist after transfer. Subsequent runs rescan the cleaned source folders and leave previous archives intact. Invalid image/annotation pairs are reported, not moved into the duplicate archive. Duplicate removal does not fix all annotation or data-quality problems.
+Read [DATA_PREPARATION.md](DATA_PREPARATION.md) for archive naming, manifests, interruption handling, and restoration before running preparation.
 
 ## Evaluation boundaries
 
